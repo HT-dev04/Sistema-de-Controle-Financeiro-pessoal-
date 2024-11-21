@@ -1,3 +1,5 @@
+//Esse ainda ta com erro, não ta salvando no banco de dados. Vou postar quando conseguir resolver
+
 import javax.swing.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
