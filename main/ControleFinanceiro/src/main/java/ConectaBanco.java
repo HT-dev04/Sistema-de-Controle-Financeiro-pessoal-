@@ -2,7 +2,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
  public class ConectaBanco {
-     private final String url;
+     private final String url ;
     private final String usuario;
     private final String senha;
     private final String drv;

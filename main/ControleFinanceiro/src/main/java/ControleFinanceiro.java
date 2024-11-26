@@ -6,7 +6,7 @@ public class ControleFinanceiro {
         Connection conn = null;
  
         // conecta com o banco de dados
-        ConectaBanco cb = new ConectaBanco("jdbc:mysql://localhost:xxxx/db_trabalho", "root", "", "com.mysql.cj.jdbc.Driver");
+        ConectaBanco cb = new ConectaBanco("jdbc:mysql://localhost:3306/db_trabalho", "root", "", "com.mysql.cj.jdbc.Driver");
         conn = cb.getConnection();
  
         if (conn != null) {

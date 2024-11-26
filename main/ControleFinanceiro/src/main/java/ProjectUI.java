@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import javax.swing.table.DefaultTableModel;
+import java.util.List;
 
 public class ProjectUI extends JFrame {
     public ProjectUI(TransacaoDAO transacaoDAO) {
@@ -29,6 +30,8 @@ public class ProjectUI extends JFrame {
         painelDatas.add(dataInicialChooser);
         painelDatas.add(labelDataFinal);
         painelDatas.add(dataFinalChooser);
+      
+        
         
         JPanel painelValor = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel labelValor = new JLabel("Valor:");
@@ -57,12 +60,12 @@ public class ProjectUI extends JFrame {
         painelBotoes.add(botaoConsultar);
         painelBotoes.add(botaoExcluir);
         
-        // configura a tabela debaixo 
+        // configura a tabela debaixo
         String[] colunas = {"ID", "Data Inicial", "Data Final", "Descrição", "Valor", "Tipo"};
         DefaultTableModel modeloTabela = new DefaultTableModel(colunas, 0);
         JTable tabela = new JTable(modeloTabela);
         JScrollPane painelRolagem = new JScrollPane(tabela);
-        
+                       
         JPanel painelTotais = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel labelTotalReceita = new JLabel("Total Receita: 0.00");
         JLabel labelTotalDespesa = new JLabel("Total Despesa: 0.00");
@@ -101,7 +104,7 @@ public class ProjectUI extends JFrame {
         
         // action listener do botão de inserir
         botaoInserir.addActionListener(e -> {
-            SimpleDateFormat formatoData = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat formatoData = new SimpleDateFormat("yyyy/MM/dd");
             String descricao = campoDescricao.getText();
             String valorTexto = campoValor.getText();
             String tipo = botaoReceita.isSelected() ? "Receita" : botaoDespesa.isSelected() ? "Despesa" : null;
@@ -231,6 +234,6 @@ public class ProjectUI extends JFrame {
             id.append((int)(Math.random() * 10));  // gera números aleatórios de 0 a 9
         }
         return id.toString();
-    }
+    }         
 }
 

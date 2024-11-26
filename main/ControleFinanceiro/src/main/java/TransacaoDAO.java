@@ -52,7 +52,7 @@ public class TransacaoDAO {
     public List<String[]> consultarTransacoes() {
         List<String[]> transacoes = new ArrayList<>();
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM tb_dados")) {
+             ResultSet rs = stmt.executeQuery("SELECT id,DATE_FORMAT(datainicial, '%d/%m/%y'), DATE_FORMAT(datafinal, '%d/%m/%y'), descricao, valor, tipo FROM tb_dados")) {
             while (rs.next()) {
                 transacoes.add(new String[]{
                         String.valueOf(rs.getInt("id")),
