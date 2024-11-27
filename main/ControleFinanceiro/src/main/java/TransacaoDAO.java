@@ -11,13 +11,13 @@ public class TransacaoDAO {
     }
 
     // Inserir uma nova transação no banco de dados
-    public void inserirTransacao(String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
+    public void inserirTransacao(String descricao, float valor, String tipo, String dataInicial, String dataFinal) {
         try (PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO tb_dados (datainicial, datafinal, descricao, valor, tipo) VALUES (?, ?, ?, ?, ?)")) {
             stmt.setString(1, dataInicial);
             stmt.setString(2, dataFinal);
             stmt.setString(3, descricao);
-            stmt.setBigDecimal(4, valor);
+            stmt.setFloat(4, valor);
             stmt.setString(5, tipo);
             stmt.executeUpdate();
             System.out.println("Transação inserida com sucesso!");
@@ -27,37 +27,36 @@ public class TransacaoDAO {
     }
 
     // Editar uma transação existente no banco de dados
-    public void editarTransacao(int id, String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
-    String sql = "UPDATE tb_dados SET descricao = ?, valor = ?, tipo = ?, datainicial = ?, datafinal = ? WHERE id = ?";
+public void editarTransacao(int id, String descricao, float valor, String tipo, String dataInicial, String dataFinal) {
+    String query = "UPDATE tb_dados SET descricao = ?, valor = ?, tipo = ?, datainicial = ?, datafinal = ? WHERE id = ?";
+    try (PreparedStatement stmt = conn.prepareStatement(query)) {
+        // Corrigindo os índices para corresponder à ordem dos parâmetros na consulta SQL
+        stmt.setString(1, descricao);  // Parâmetro 1: descrição
+        stmt.setFloat(2, valor);       // Parâmetro 2: valor
+        stmt.setString(3, tipo);       // Parâmetro 3: tipo
+        stmt.setString(4, dataInicial); // Parâmetro 4: dataInicial
+        stmt.setString(5, dataFinal);  // Parâmetro 5: dataFinal
+        stmt.setInt(6, id);            // Parâmetro 6: id (para WHERE)
 
-    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-        stmt.setString(1, descricao);
-        stmt.setBigDecimal(2, valor);  // Agora usa BigDecimal corretamente
-        stmt.setString(3, tipo);
-        stmt.setString(4, dataInicial);
-        stmt.setString(5, dataFinal);
-        stmt.setInt(6, id);
-
+        // Executa a atualização no banco de dados
         int rowsAffected = stmt.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Transação atualizada com sucesso!");
+            JOptionPane.showMessageDialog(null, "Transação alterada com sucesso!");
         } else {
-            System.out.println("Nenhuma transação encontrada com o ID especificado.");
+            JOptionPane.showMessageDialog(null, "Transação não encontrada.");
         }
-
     } catch (SQLException e) {
-        e.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Erro ao alterar: " + e.getMessage());
     }
 }
 
-
     // Excluir uma transação do banco de dados
-    public void excluirTransacao(String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
+    public void excluirTransacao(String descricao, String valor, String tipo, String dataInicial, String dataFinal) {
     String sql = "DELETE FROM tb_dados WHERE descricao = ? AND valor = ? AND tipo = ? AND datainicial = ? AND datafinal = ?";
     
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
         stmt.setString(1, descricao);
-        stmt.setBigDecimal(2, valor);
+        stmt.setString(2, valor);
         stmt.setString(3, tipo);
         stmt.setString(4, dataInicial);
         stmt.setString(5, dataFinal);
@@ -88,7 +87,7 @@ public class TransacaoDAO {
                 modeloTabela.addRow(new Object[]{
                     rs.getInt("id"),
                     rs.getString("descricao"),
-                    rs.getDouble("valor"),
+                    rs.getFloat("valor"),
                     rs.getString("tipo"),
                     rs.getString("datainicial"),
                     rs.getString("datafinal")
@@ -113,7 +112,7 @@ public class TransacaoDAO {
                     transacao = new String[]{
                         String.valueOf(rs.getInt("id")),
                         rs.getString("descricao"),
-                        String.valueOf(rs.getDouble("valor")),
+                        String.valueOf(rs.getFloat("valor")),
                         rs.getString("tipo"),
                         rs.getString("datainicial"),
                         rs.getString("datafinal")
