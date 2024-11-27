@@ -117,8 +117,9 @@ public class ProjectUI extends JFrame {
         return;
     }
     try {
-        BigDecimal valor = new BigDecimal(valorTexto);  // Converte o valor para BigDecimal
-        valor = valor.setScale(2, RoundingMode.HALF_UP);  // Define o arredondamento para 2 casas decimais
+        // Agora o tipo do valor é float
+        float valor = Float.parseFloat(valorTexto);  // Converte o valor para float
+        valor = Math.round(valor * 100.0f) / 100.0f;  // Arredonda para 2 casas decimais
         String dataInicial = formatoData.format(dataInicialChooser.getDate());
         String dataFinal = formatoData.format(dataFinalChooser.getDate());
 
@@ -141,6 +142,7 @@ public class ProjectUI extends JFrame {
         JOptionPane.showMessageDialog(this, "Valor inválido. Use apenas números.");
     }
 });
+
         
 // Botão "Editar" não está funcionando ainda 
 botaoEditar.addActionListener(e -> {
@@ -151,37 +153,50 @@ botaoEditar.addActionListener(e -> {
         int id = Integer.parseInt(modeloTabela.getValueAt(linha, 0).toString());
 
         // Captura os dados atuais da linha
-        String descricao = modeloTabela.getValueAt(linha, 1).toString();
-        String tipo = modeloTabela.getValueAt(linha, 2).toString();
-        String dataInicial = modeloTabela.getValueAt(linha, 3).toString();
-        String dataFinal = modeloTabela.getValueAt(linha, 4).toString();
+        String descricao = modeloTabela.getValueAt(linha, 3).toString();
+        String tipo = modeloTabela.getValueAt(linha, 5).toString();
+        String dataInicial = modeloTabela.getValueAt(linha, 1).toString();
+        String dataFinal = modeloTabela.getValueAt(linha, 2).toString();
 
         // Obter o valor da linha selecionada na tabela
-        String valorStr = modeloTabela.getValueAt(linha, 5).toString();
-        BigDecimal valor = BigDecimal.ZERO;
-
-        try {
-            valor = new BigDecimal(valorStr);  // Converte o valor para BigDecimal
-            valor = valor.setScale(2, RoundingMode.HALF_UP);  // Define o arredondamento para 2 casas decimais
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "O valor inserido é inválido! Por favor, insira um número.");
-            return;  // Se o valor for inválido, não prossegue com a edição
-        }
+        String valorStr = modeloTabela.getValueAt(linha, 4).toString();
+        float valor = 0.0f;  // Inicializando como float
 
         // Agora, atualizamos os dados na tabela, permitindo a edição do valor
         String novoValorStr = JOptionPane.showInputDialog(this, "Digite o novo valor:", valor);
         if (novoValorStr != null) {
             try {
-                // Converte o novo valor para BigDecimal
-                valor = new BigDecimal(novoValorStr);
-                valor = valor.setScale(2, RoundingMode.HALF_UP);  // Arredonda para 2 casas decimais
+                // Converte o novo valor para float
+                valor = Float.parseFloat(novoValorStr);
+                valor = Math.round(valor * 100.0f) / 100.0f;  // Arredonda para 2 casas decimais
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "O valor inserido é inválido! Por favor, insira um número.");
                 return;  // Se o novo valor for inválido, não prossegue com a edição
             }
 
             // Atualizar o valor na tabela (no modelo)
-            modeloTabela.setValueAt(valor.toString(), linha, 5);  // Atualiza a coluna do valor na tabela
+            modeloTabela.setValueAt(String.format("%.2f", valor), linha, 5);  // Atualiza a coluna do valor na tabela
+        }
+
+        // Captura o novo valor de descrição, tipo, data inicial e data final
+        String novaDescricao = JOptionPane.showInputDialog(this, "Digite a nova descrição:", descricao);
+        if (novaDescricao != null) {
+            descricao = novaDescricao;
+        }
+
+        String novoTipo = (String) JOptionPane.showInputDialog(this, "Escolha o novo tipo:", "Tipo", JOptionPane.QUESTION_MESSAGE, null, new String[] {"Receita", "Despesa"}, tipo);
+        if (novoTipo != null) {
+            tipo = novoTipo;
+        }
+
+        String novaDataInicial = JOptionPane.showInputDialog(this, "Digite a nova data inicial (yyyy/MM/dd):", dataInicial);
+        if (novaDataInicial != null) {
+            dataInicial = novaDataInicial;
+        }
+
+        String novaDataFinal = JOptionPane.showInputDialog(this, "Digite a nova data final (yyyy/MM/dd):", dataFinal);
+        if (novaDataFinal != null) {
+            dataFinal = novaDataFinal;
         }
 
         // Confirmar com o usuário se deseja salvar as alterações
@@ -191,28 +206,36 @@ botaoEditar.addActionListener(e -> {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirmacao == JOptionPane.YES_OPTION) {
-            // Atualiza no banco de dados (passando BigDecimal)
+            // Atualiza no banco de dados (passando todos os dados)
             transacaoDAO.editarTransacao(id, descricao, valor, tipo, dataInicial, dataFinal);
 
             // Exibe uma mensagem de sucesso
             JOptionPane.showMessageDialog(this, "Transação editada com sucesso!");
 
+            // Atualiza a interface gráfica
+            modeloTabela.setValueAt(descricao, linha, 3);  // Atualiza a descrição
+            modeloTabela.setValueAt(tipo, linha, 5);       // Atualiza o tipo
+            modeloTabela.setValueAt(dataInicial, linha, 1); // Atualiza a data inicial
+            modeloTabela.setValueAt(dataFinal, linha, 2);   // Atualiza a data final
+            modeloTabela.setValueAt(String.format("%.2f", valor), linha, 4);  // Atualiza o valor
+
             // Atualiza a interface gráfica se necessário (ex: atualizar totais, etc)
-            atualizarTotais.run();
+            modeloTabela.fireTableDataChanged();
         }
     } else {
         JOptionPane.showMessageDialog(this, "Selecione uma linha para editar.");
     }
 });
 
+
         
         // Action listener do botão de excluir
-botaoExcluir.addActionListener(e -> {
+    botaoExcluir.addActionListener(e -> {
     int linha = tabela.getSelectedRow();
     if (linha != -1) {
         // Capturar os dados da linha selecionada
         String descricao = modeloTabela.getValueAt(linha, 3).toString();
-        BigDecimal valor = new BigDecimal(modeloTabela.getValueAt(linha, 4).toString());  // Converte o valor para BigDecimal
+        String valor = modeloTabela.getValueAt(linha, 4).toString();
         String tipo = modeloTabela.getValueAt(linha, 5).toString();
         String dataInicial = modeloTabela.getValueAt(linha, 1).toString();
         String dataFinal = modeloTabela.getValueAt(linha, 2).toString();
