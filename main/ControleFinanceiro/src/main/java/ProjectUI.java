@@ -4,6 +4,8 @@ import java.awt.*;
 import java.text.SimpleDateFormat;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class ProjectUI extends JFrame {
 
@@ -103,104 +105,114 @@ public class ProjectUI extends JFrame {
         };
         
         // Action listener do botão de inserir
-        botaoInserir.addActionListener(e -> {
-            SimpleDateFormat formatoData = new SimpleDateFormat("yyyy/MM/dd");
-            String descricao = campoDescricao.getText();
-            String valorTexto = campoValor.getText();
-            String tipo = botaoReceita.isSelected() ? "Receita" : botaoDespesa.isSelected() ? "Despesa" : null;
+    botaoInserir.addActionListener(e -> {
+    SimpleDateFormat formatoData = new SimpleDateFormat("yyyy/MM/dd");
+    String descricao = campoDescricao.getText();
+    String valorTexto = campoValor.getText();
+    String tipo = botaoReceita.isSelected() ? "Receita" : botaoDespesa.isSelected() ? "Despesa" : null;
 
-            if (descricao.isEmpty() || valorTexto.isEmpty() || tipo == null ||
-                dataInicialChooser.getDate() == null || dataFinalChooser.getDate() == null) {
-                JOptionPane.showMessageDialog(this, "Preencha todos os campos corretamente.");
-                return;
-            }
-            try {
-                double valor = Double.parseDouble(valorTexto);
-                String dataInicial = formatoData.format(dataInicialChooser.getDate());
-                String dataFinal = formatoData.format(dataFinalChooser.getDate());
-
-                // Salvar no banco de dados
-                transacaoDAO.inserirTransacao(descricao, valor, tipo, dataInicial, dataFinal);
-
-                // Adicionar na tabela da interface
-                String id = gerarIdSequencial(); // Gera o ID sequencial
-                modeloTabela.addRow(new Object[]{id, dataInicial, dataFinal, descricao, valor, tipo});
-                atualizarTotais.run();
-
-                // Limpar campos
-                campoDescricao.setText("");
-                campoValor.setText("");
-                grupoTipo.clearSelection();
-                dataInicialChooser.setDate(null);
-                dataFinalChooser.setDate(null);
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Valor inválido. Use apenas números.");
-            }
-        });
-        
-        // Action listener do botão de editar
-        botaoEditar.addActionListener(e -> {
-    int linhaSelecionada = tabela.getSelectedRow();
-
-    if (linhaSelecionada == -1) {
-        JOptionPane.showMessageDialog(null, "Selecione uma transação para editar.");
+    if (descricao.isEmpty() || valorTexto.isEmpty() || tipo == null ||
+        dataInicialChooser.getDate() == null || dataFinalChooser.getDate() == null) {
+        JOptionPane.showMessageDialog(this, "Preencha todos os campos corretamente.");
         return;
     }
+    try {
+        BigDecimal valor = new BigDecimal(valorTexto);  // Converte o valor para BigDecimal
+        valor = valor.setScale(2, RoundingMode.HALF_UP);  // Define o arredondamento para 2 casas decimais
+        String dataInicial = formatoData.format(dataInicialChooser.getDate());
+        String dataFinal = formatoData.format(dataFinalChooser.getDate());
 
-    // Obtemos os valores selecionados na tabela
-    int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
-    String descricaoAtual = modeloTabela.getValueAt(linhaSelecionada, 1).toString();
-    double valorAtual = Double.parseDouble(modeloTabela.getValueAt(linhaSelecionada, 2).toString());
-    String tipoAtual = modeloTabela.getValueAt(linhaSelecionada, 3).toString();
-    String dataInicialAtual = modeloTabela.getValueAt(linhaSelecionada, 4).toString();
-    String dataFinalAtual = modeloTabela.getValueAt(linhaSelecionada, 5).toString();
+        // Salvar no banco de dados
+        transacaoDAO.inserirTransacao(descricao, valor, tipo, dataInicial, dataFinal);
 
-    // Criamos campos para edição
-    JTextField descricaoCampo = new JTextField(descricaoAtual);
-    JTextField valorCampo = new JTextField(String.valueOf(valorAtual));
-    JTextField tipoCampo = new JTextField(tipoAtual);
-    JTextField dataInicialCampo = new JTextField(dataInicialAtual);
-    JTextField dataFinalCampo = new JTextField(dataFinalAtual);
+        // Adicionar na tabela da interface
+        String id = gerarIdSequencial(); // Gera o ID sequencial
+        modeloTabela.addRow(new Object[]{id, dataInicial, dataFinal, descricao, valor, tipo});
+        atualizarTotais.run();
 
-    Object[] message = {
-        "Descrição:", descricaoCampo,
-        "Valor:", valorCampo,
-        "Tipo:", tipoCampo,
-        "Data Inicial:", dataInicialCampo,
-        "Data Final:", dataFinalCampo,
-    };
+        // Limpar campos
+        campoDescricao.setText("");
+        campoValor.setText("");
+        grupoTipo.clearSelection();
+        dataInicialChooser.setDate(null);
+        dataFinalChooser.setDate(null);
 
-    int option = JOptionPane.showConfirmDialog(null, message, "Editar Transação", JOptionPane.OK_CANCEL_OPTION);
-
-    if (option == JOptionPane.OK_OPTION) {
-        String descricao = descricaoCampo.getText();
-        double valor = Double.parseDouble(valorCampo.getText());
-        String tipo = tipoCampo.getText();
-        String dataInicial = dataInicialCampo.getText();
-        String dataFinal = dataFinalCampo.getText();
-
-        // Atualiza no banco de dados
-        transacaoDAO.editarTransacao(id, descricao, valor, tipo, dataInicial, dataFinal);
-
-        // Atualiza na tabela
-        modeloTabela.setValueAt(descricao, linhaSelecionada, 1);
-        modeloTabela.setValueAt(valor, linhaSelecionada, 2);
-        modeloTabela.setValueAt(tipo, linhaSelecionada, 3);
-        modeloTabela.setValueAt(dataInicial, linhaSelecionada, 4);
-        modeloTabela.setValueAt(dataFinal, linhaSelecionada, 5);
-
-        JOptionPane.showMessageDialog(null, "Transação editada com sucesso!");
+    } catch (NumberFormatException ex) {
+        JOptionPane.showMessageDialog(this, "Valor inválido. Use apenas números.");
     }
 });
         
+// Botão "Editar" não está funcionando ainda 
+botaoEditar.addActionListener(e -> {
+    int linha = tabela.getSelectedRow();  // Obter linha selecionada na tabela
+
+    if (linha != -1) {  // Verifica se há uma linha selecionada
+        // Obter ID da transação (na coluna 0 da tabela)
+        int id = Integer.parseInt(modeloTabela.getValueAt(linha, 0).toString());
+
+        // Captura os dados atuais da linha
+        String descricao = modeloTabela.getValueAt(linha, 1).toString();
+        String tipo = modeloTabela.getValueAt(linha, 2).toString();
+        String dataInicial = modeloTabela.getValueAt(linha, 3).toString();
+        String dataFinal = modeloTabela.getValueAt(linha, 4).toString();
+
+        // Obter o valor da linha selecionada na tabela
+        String valorStr = modeloTabela.getValueAt(linha, 5).toString();
+        BigDecimal valor = BigDecimal.ZERO;
+
+        try {
+            valor = new BigDecimal(valorStr);  // Converte o valor para BigDecimal
+            valor = valor.setScale(2, RoundingMode.HALF_UP);  // Define o arredondamento para 2 casas decimais
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "O valor inserido é inválido! Por favor, insira um número.");
+            return;  // Se o valor for inválido, não prossegue com a edição
+        }
+
+        // Agora, atualizamos os dados na tabela, permitindo a edição do valor
+        String novoValorStr = JOptionPane.showInputDialog(this, "Digite o novo valor:", valor);
+        if (novoValorStr != null) {
+            try {
+                // Converte o novo valor para BigDecimal
+                valor = new BigDecimal(novoValorStr);
+                valor = valor.setScale(2, RoundingMode.HALF_UP);  // Arredonda para 2 casas decimais
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "O valor inserido é inválido! Por favor, insira um número.");
+                return;  // Se o novo valor for inválido, não prossegue com a edição
+            }
+
+            // Atualizar o valor na tabela (no modelo)
+            modeloTabela.setValueAt(valor.toString(), linha, 5);  // Atualiza a coluna do valor na tabela
+        }
+
+        // Confirmar com o usuário se deseja salvar as alterações
+        int confirmacao = JOptionPane.showConfirmDialog(this,
+                "Deseja salvar as alterações feitas nesta transação?",
+                "Confirmar Edição",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirmacao == JOptionPane.YES_OPTION) {
+            // Atualiza no banco de dados (passando BigDecimal)
+            transacaoDAO.editarTransacao(id, descricao, valor, tipo, dataInicial, dataFinal);
+
+            // Exibe uma mensagem de sucesso
+            JOptionPane.showMessageDialog(this, "Transação editada com sucesso!");
+
+            // Atualiza a interface gráfica se necessário (ex: atualizar totais, etc)
+            atualizarTotais.run();
+        }
+    } else {
+        JOptionPane.showMessageDialog(this, "Selecione uma linha para editar.");
+    }
+});
+
+        
         // Action listener do botão de excluir
-        botaoExcluir.addActionListener(e -> {
+botaoExcluir.addActionListener(e -> {
     int linha = tabela.getSelectedRow();
     if (linha != -1) {
         // Capturar os dados da linha selecionada
         String descricao = modeloTabela.getValueAt(linha, 3).toString();
-        double valor = Double.parseDouble(modeloTabela.getValueAt(linha, 4).toString());
+        BigDecimal valor = new BigDecimal(modeloTabela.getValueAt(linha, 4).toString());  // Converte o valor para BigDecimal
         String tipo = modeloTabela.getValueAt(linha, 5).toString();
         String dataInicial = modeloTabela.getValueAt(linha, 1).toString();
         String dataFinal = modeloTabela.getValueAt(linha, 2).toString();
