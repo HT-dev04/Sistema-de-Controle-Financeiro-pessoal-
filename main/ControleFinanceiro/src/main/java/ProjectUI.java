@@ -9,8 +9,7 @@ import java.math.RoundingMode;
 
 public class ProjectUI extends JFrame {
 
-    private static int contadorId = 1;
-
+   
     public ProjectUI(TransacaoDAO transacaoDAO) {
         setTitle("Tabela de Controle Financeiro");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -71,8 +70,10 @@ public class ProjectUI extends JFrame {
         JPanel painelTotais = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel labelTotalReceita = new JLabel("Total Receita: 0.00");
         JLabel labelTotalDespesa = new JLabel("Total Despesa: 0.00");
+        JLabel labelValorLiquido = new JLabel("Valor Liquido: 0.00");
         painelTotais.add(labelTotalReceita);
         painelTotais.add(labelTotalDespesa);
+        painelTotais.add(labelValorLiquido);
         
         // Painel principal
         JPanel painelPrincipal = new JPanel();
@@ -91,6 +92,7 @@ public class ProjectUI extends JFrame {
         Runnable atualizarTotais = () -> {
             double totalReceita = 0.0;
             double totalDespesa = 0.0;
+            double valorLiquido = 0.0;
             for (int i = 0; i < modeloTabela.getRowCount(); i++) {
                 double valor = Double.parseDouble(modeloTabela.getValueAt(i, 4).toString());
                 String tipo = modeloTabela.getValueAt(i, 5).toString();
@@ -100,12 +102,15 @@ public class ProjectUI extends JFrame {
                     totalDespesa += valor;
                 }
             }
+            valorLiquido = totalReceita - totalDespesa;
+            
             labelTotalReceita.setText(String.format("Total Receita: %.2f", totalReceita));
             labelTotalDespesa.setText(String.format("Total Despesa: %.2f", totalDespesa));
+            labelValorLiquido.setText(String.format("Valor Liquido: %.2f", valorLiquido));
         };
         
         // Action listener do botão de inserir
-    botaoInserir.addActionListener(e -> {
+   botaoInserir.addActionListener(e -> {
     SimpleDateFormat formatoData = new SimpleDateFormat("yyyy/MM/dd");
     String descricao = campoDescricao.getText();
     String valorTexto = campoValor.getText();
@@ -117,17 +122,16 @@ public class ProjectUI extends JFrame {
         return;
     }
     try {
-        // Agora o tipo do valor é float
-        float valor = Float.parseFloat(valorTexto);  // Converte o valor para float
-        valor = Math.round(valor * 100.0f) / 100.0f;  // Arredonda para 2 casas decimais
+        // Converte o valor para float e arredonda para 2 casas decimais
+        float valor = Float.parseFloat(valorTexto);
+        valor = Math.round(valor * 100.0f) / 100.0f;
         String dataInicial = formatoData.format(dataInicialChooser.getDate());
         String dataFinal = formatoData.format(dataFinalChooser.getDate());
 
-        // Salvar no banco de dados
-        transacaoDAO.inserirTransacao(descricao, valor, tipo, dataInicial, dataFinal);
+        // Salvar no banco de dados e obter o ID retornado
+        int id = transacaoDAO.inserirTransacao(descricao, valor, tipo, dataInicial, dataFinal);
 
-        // Adicionar na tabela da interface
-        String id = gerarIdSequencial(); // Gera o ID sequencial
+        // Adicionar na tabela da interface com o ID obtido do banco
         modeloTabela.addRow(new Object[]{id, dataInicial, dataFinal, descricao, valor, tipo});
         atualizarTotais.run();
 
@@ -209,9 +213,6 @@ botaoEditar.addActionListener(e -> {
             // Atualiza no banco de dados (passando todos os dados)
             transacaoDAO.editarTransacao(id, descricao, valor, tipo, dataInicial, dataFinal);
 
-            // Exibe uma mensagem de sucesso
-            JOptionPane.showMessageDialog(this, "Transação editada com sucesso!");
-
             // Atualiza a interface gráfica
             modeloTabela.setValueAt(descricao, linha, 3);  // Atualiza a descrição
             modeloTabela.setValueAt(tipo, linha, 5);       // Atualiza o tipo
@@ -225,6 +226,7 @@ botaoEditar.addActionListener(e -> {
     } else {
         JOptionPane.showMessageDialog(this, "Selecione uma linha para editar.");
     }
+
 });
 
 
@@ -261,6 +263,8 @@ botaoEditar.addActionListener(e -> {
     } else {
         JOptionPane.showMessageDialog(this, "Selecione uma linha para excluir.");
     }
+    
+    
 });
 
         
@@ -271,7 +275,7 @@ botaoEditar.addActionListener(e -> {
         try {
             int id = Integer.parseInt(idStr); // Converte o ID para inteiro
             String[] transacao = transacaoDAO.consultarTransacao(id); // Consulta no banco de dados
-
+            System.out.println(transacao);
             if (transacao != null) {
                 // Exibe os detalhes da transação em um JOptionPane
                 JOptionPane.showMessageDialog(null,
@@ -295,8 +299,5 @@ botaoEditar.addActionListener(e -> {
 });
     }
     
-    // Método para gerar o ID sequencial
-    private String gerarIdSequencial() {
-        return String.valueOf(contadorId++);
-    }
+ 
 }
