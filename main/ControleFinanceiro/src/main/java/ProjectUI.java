@@ -148,7 +148,7 @@ public class ProjectUI extends JFrame {
 });
 
         
-// Botão "Editar" não está funcionando ainda 
+// Botão "Editar" 
 botaoEditar.addActionListener(e -> {
     int linha = tabela.getSelectedRow();  // Obter linha selecionada na tabela
 

@@ -10,36 +10,40 @@ public class TransacaoDAO {
         this.conn = conn;
     }
 
-    // Inserir uma nova transação no banco de dados
-    public void inserirTransacao(String descricao, float valor, String tipo, String dataInicial, String dataFinal) {
-        try (PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO tb_dados (datainicial, datafinal, descricao, valor, tipo) VALUES (?, ?, ?, ?, ?)")) {
-            stmt.setString(1, dataInicial);
-            stmt.setString(2, dataFinal);
-            stmt.setString(3, descricao);
-            stmt.setFloat(4, valor);
-            stmt.setString(5, tipo);
-            stmt.executeUpdate();
-            System.out.println("Transação inserida com sucesso!");
-        } catch (SQLException e) {
-            System.out.println("Erro ao inserir transação: " + e.getMessage());
+   // Inserir uma nova transação no banco de dados e retornar o ID gerado
+public int inserirTransacao(String descricao, float valor, String tipo, String dataInicial, String dataFinal) {
+    int idGerado = -1; // ID padrão para falha
+    String sql = "INSERT INTO tb_dados (datainicial, datafinal, descricao, valor, tipo) VALUES (?, ?, ?, ?, ?)";
+
+    try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        stmt.setString(1, dataInicial);
+        stmt.setString(2, dataFinal);
+        stmt.setString(3, descricao);
+        stmt.setFloat(4, valor);
+        stmt.setString(5, tipo);
+        stmt.executeUpdate();
+
+        // Obter o ID gerado automaticamente
+        try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+            if (generatedKeys.next()) {
+                idGerado = generatedKeys.getInt(1); // Recupera o primeiro campo da chave gerada
+            }
         }
+
+        System.out.println("Transação inserida com sucesso! ID: " + idGerado);
+    } catch (SQLException e) {
+        System.out.println("Erro ao inserir transação: " + e.getMessage());
     }
 
+    return idGerado; // Retorna o ID gerado ou -1 em caso de erro
+}
     // Editar uma transação existente no banco de dados
 public void editarTransacao(int id, String descricao, float valor, String tipo, String dataInicial, String dataFinal) {
-    String query = "UPDATE tb_dados SET descricao = ?, valor = ?, tipo = ?, datainicial = ?, datafinal = ? WHERE id = ?";
-    try (PreparedStatement stmt = conn.prepareStatement(query)) {
-        // Corrigindo os índices para corresponder à ordem dos parâmetros na consulta SQL
-        stmt.setString(1, descricao);  // Parâmetro 1: descrição
-        stmt.setFloat(2, valor);       // Parâmetro 2: valor
-        stmt.setString(3, tipo);       // Parâmetro 3: tipo
-        stmt.setString(4, dataInicial); // Parâmetro 4: dataInicial
-        stmt.setString(5, dataFinal);  // Parâmetro 5: dataFinal
-        stmt.setInt(6, id);            // Parâmetro 6: id (para WHERE)
-
+    String query = "UPDATE tb_dados SET descricao = '" + descricao + "', valor = " + valor + ", tipo = '" + tipo + 
+                   "', datainicial = '" + dataInicial + "', datafinal = '" + dataFinal + "' WHERE id = " + id;
+    try (Statement stmt = conn.createStatement()) {
         // Executa a atualização no banco de dados
-        int rowsAffected = stmt.executeUpdate();
+        int rowsAffected = stmt.executeUpdate(query);
         if (rowsAffected > 0) {
             JOptionPane.showMessageDialog(null, "Transação alterada com sucesso!");
         } else {
@@ -49,6 +53,7 @@ public void editarTransacao(int id, String descricao, float valor, String tipo, 
         JOptionPane.showMessageDialog(null, "Erro ao alterar: " + e.getMessage());
     }
 }
+
 
     // Excluir uma transação do banco de dados
     public void excluirTransacao(String descricao, String valor, String tipo, String dataInicial, String dataFinal) {
@@ -72,32 +77,35 @@ public void editarTransacao(int id, String descricao, float valor, String tipo, 
     }
 }
 
-    // Consultar todas as transações no banco de dados e atualizar a tabela da interface
-    public void consultarTransacoes(DefaultTableModel modeloTabela) {
-        String sql = "SELECT id, DATE_FORMAT(datainicial, '%d/%m/%y') AS datainicial, DATE_FORMAT(datafinal, '%d/%m/%y') AS datafinal, descricao, valor, tipo FROM tb_dados";
+   // Consultar todas as transações no banco de dados e atualizar a tabela da interface
+public void consultarTransacoes(DefaultTableModel modeloTabela) {
+    String sql = "SELECT id, DATE_FORMAT(datainicial, '%d/%m/%y') AS datainicial, DATE_FORMAT(datafinal, '%d/%m/%y') AS datafinal, descricao, valor, tipo FROM tb_dados";
 
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+    try (Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
 
-            // Limpa os dados da tabela na interface
-            modeloTabela.setRowCount(0);
+        // Limpa os dados da tabela na interface
+        modeloTabela.setRowCount(0);
 
-            // Adiciona cada linha de resultado no modelo da tabela
-            while (rs.next()) {
-                modeloTabela.addRow(new Object[]{
-                    rs.getInt("id"),
-                    rs.getString("descricao"),
-                    rs.getFloat("valor"),
-                    rs.getString("tipo"),
-                    rs.getString("datainicial"),
-                    rs.getString("datafinal")
-                });
-            }
-            System.out.println("Consulta concluída e tabela atualizada!");
-        } catch (SQLException e) {
-            System.out.println("Erro ao consultar transações: " + e.getMessage());
+        // Adiciona cada linha de resultado no modelo da tabela
+        while (rs.next()) {
+            int id = rs.getInt("id");  // Obtém o ID da transação
+            System.out.println("ID selecionado: " + id);  // Imprime o ID
+
+            modeloTabela.addRow(new Object[]{
+                id,                                 // Adiciona o ID na tabela
+                rs.getString("descricao"),
+                rs.getFloat("valor"),
+                rs.getString("tipo"),
+                rs.getString("datainicial"),
+                rs.getString("datafinal")
+            });
         }
+        System.out.println("Consulta concluída e tabela atualizada!");
+    } catch (SQLException e) {
+        System.out.println("Erro ao consultar transações: " + e.getMessage());
     }
+}
 
     // Consultar uma transação específica pelo ID e exibir na interface
     public String[] consultarTransacao(int id) {
