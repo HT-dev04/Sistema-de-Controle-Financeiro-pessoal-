@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -10,13 +11,13 @@ public class TransacaoDAO {
     }
 
     // Inserir uma nova transação no banco de dados
-    public void inserirTransacao(String descricao, double valor, String tipo, String dataInicial, String dataFinal) {
+    public void inserirTransacao(String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
         try (PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO tb_dados (datainicial, datafinal, descricao, valor, tipo) VALUES (?, ?, ?, ?, ?)")) {
             stmt.setString(1, dataInicial);
             stmt.setString(2, dataFinal);
             stmt.setString(3, descricao);
-            stmt.setDouble(4, valor);
+            stmt.setBigDecimal(4, valor);
             stmt.setString(5, tipo);
             stmt.executeUpdate();
             System.out.println("Transação inserida com sucesso!");
@@ -26,36 +27,37 @@ public class TransacaoDAO {
     }
 
     // Editar uma transação existente no banco de dados
-    public void editarTransacao(int id, String descricao, double valor, String tipo, String dataInicial, String dataFinal) {
-        String sql = "UPDATE tb_dados SET descricao = ?, valor = ?, tipo = ?, datainicial = ?, datafinal = ? WHERE id = ?";
+    public void editarTransacao(int id, String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
+    String sql = "UPDATE tb_dados SET descricao = ?, valor = ?, tipo = ?, datainicial = ?, datafinal = ? WHERE id = ?";
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, descricao);
-            stmt.setDouble(2, valor);
-            stmt.setString(3, tipo);
-            stmt.setString(4, dataInicial);
-            stmt.setString(5, dataFinal);
-            stmt.setInt(6, id);
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setString(1, descricao);
+        stmt.setBigDecimal(2, valor);  // Agora usa BigDecimal corretamente
+        stmt.setString(3, tipo);
+        stmt.setString(4, dataInicial);
+        stmt.setString(5, dataFinal);
+        stmt.setInt(6, id);
 
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Transação atualizada com sucesso!");
-            } else {
-                System.out.println("Nenhuma transação encontrada com o ID especificado.");
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        int rowsAffected = stmt.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Transação atualizada com sucesso!");
+        } else {
+            System.out.println("Nenhuma transação encontrada com o ID especificado.");
         }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+}
+
 
     // Excluir uma transação do banco de dados
-    public void excluirTransacao(String descricao, double valor, String tipo, String dataInicial, String dataFinal) {
+    public void excluirTransacao(String descricao, BigDecimal valor, String tipo, String dataInicial, String dataFinal) {
     String sql = "DELETE FROM tb_dados WHERE descricao = ? AND valor = ? AND tipo = ? AND datainicial = ? AND datafinal = ?";
     
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
         stmt.setString(1, descricao);
-        stmt.setDouble(2, valor);
+        stmt.setBigDecimal(2, valor);
         stmt.setString(3, tipo);
         stmt.setString(4, dataInicial);
         stmt.setString(5, dataFinal);
